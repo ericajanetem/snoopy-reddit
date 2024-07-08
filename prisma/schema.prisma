@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  content   String
+  likes     Int?
+  createdAt DateTime @default(now())
+  userId    String
+  Post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  likes     Int
+  createdAt DateTime  @default(now())
+  userId    String
+  comments  Comment[]
+  User      User      @relation(fields: [userId], references: [id])
+  votes     Vote[]
+}
+
+model User {
+  id        String    @id
+  email     String
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  userName  String?   @unique
+  createdAt DateTime  @default(now())
+  comments  Comment[]
+  posts     Post[]
+  votes     Vote[]
+}
+
+model Vote {
+  postId   Int
+  userId   String
+  voteType TypeOfVote
+  id       Int        @id @default(autoincrement())
+  Post     Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  User     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TypeOfVote {
+  UP
+  DOWN
+}
