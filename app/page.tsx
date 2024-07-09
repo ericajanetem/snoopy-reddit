@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { unstable_noStore as noStore } from "@/node_modules/next/cache";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 async function getData() {
   noStore();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const allPostResponse = await fetch(`${apiUrl}/api/posts`);
   if (!allPostResponse.ok) {
     return null;
