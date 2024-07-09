@@ -12,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Card, CardHeader } from "@/components/ui/card";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -20,7 +21,7 @@ async function getData(id: string) {
   noStore();
   const postResponse = await fetch(`${apiUrl}/api/posts/${id}`);
   if (!postResponse.ok) {
-    throw new Error(`Post with ID ${id} not found`);
+    return null;
   }
 
   if (!postResponse) {
@@ -99,6 +100,12 @@ export default async function PostPage({ params }: { params: { id: string } }) {
       </div>
     );
   } else {
-    return null;
+    return (
+      <div>
+        <Card>
+          <CardHeader>Post no longer exists...</CardHeader>
+        </Card>
+      </div>
+    );
   }
 }

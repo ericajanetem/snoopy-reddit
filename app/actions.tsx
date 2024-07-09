@@ -5,10 +5,10 @@ import { Prisma, TypeOfVote } from "@prisma/client";
 import { revalidatePath } from "@/node_modules/next/cache";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { unstable_noStore as noStore } from "@/node_modules/next/cache";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function createPost(formData: FormData) {
   noStore();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
 
@@ -56,6 +56,7 @@ export async function createPost(formData: FormData) {
 
 export async function createComment(formData: FormData) {
   noStore();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const comment = formData.get("comment") as string;
   const postId = formData.get("postId");
 
