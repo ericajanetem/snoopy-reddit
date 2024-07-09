@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "./lib/db";
+import { Prisma, TypeOfVote } from "@prisma/client";
 import { revalidatePath } from "@/node_modules/next/cache";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { unstable_noStore as noStore } from "@/node_modules/next/cache";
@@ -15,36 +16,39 @@ export async function createPost(formData: FormData) {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   let userData: any;
-  try {
-    userData = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-  } catch (error) {
-    console.log(error);
-    throw new Error("User is not logged in");
-  }
 
-  const postData = {
-    title,
-    content,
-    userId: user.id,
-  };
+  if (user) {
+    try {
+      userData = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new Error("User is not logged in");
+    }
 
-  try {
-    const response = await fetch(`${apiUrl}/api/posts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(postData),
-    });
+    const postData = {
+      title,
+      content,
+      userId: user.id,
+    };
 
-    if (!response.ok) {
+    try {
+      const response = await fetch(`${apiUrl}/api/posts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create post");
+      }
+    } catch (error) {
+      console.log(error);
       throw new Error("Failed to create post");
     }
-  } catch (error) {
-    console.log(error);
-    throw new Error("Failed to create post");
   }
   revalidatePath(`/`);
   // return NextResponse.json({status: 200})
@@ -58,125 +62,122 @@ export async function createComment(formData: FormData) {
   // Check that the user is login
   const { getUser } = getKindeServerSession();
   const user = await getUser();
-  let userData: any;
-  try {
-    userData = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-  } catch (error) {
-    console.log(error);
-  }
 
-  const postData = {
-    id: Number(postId),
-    content: comment,
-    userId: user.id,
-  };
+  if (!user || user === null || !user.id)
+    throw new Error("something went wrong please try again");
 
-  // Create the Comment
-  try {
-    const response = await fetch(
-      `${apiUrl}/api/posts/${postId}/comments`,
-      {
+  if (user) {
+    const postData = {
+      id: Number(postId),
+      content: comment,
+      userId: user.id,
+    };
+
+    // Create the Comment
+    try {
+      const response = await fetch(`${apiUrl}/api/posts/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(postData),
-      }
-    );
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        throw new Error("Failed to create comment");
+      }
+    } catch (error) {
       throw new Error("Failed to create comment");
     }
-  } catch (error) {
-    throw new Error("Failed to create comment");
   }
   revalidatePath(`/posts/${postId}`);
 }
 
 export async function handleVote(formData: FormData) {
   noStore();
-  const typeVote = formData.get("typeVote");
+  const typeVote = formData.get("typeVote") as TypeOfVote;
   const postId = formData.get("postId");
 
   // Check that the user is login
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   let userData: any;
-  try {
-    userData = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-  } catch (error) {
-    throw new Error("User is not logged in");
-  }
 
-  let voteChangeNum: number;
-  let upvoteStatus: boolean = false;
-  let downvoteStatus: boolean = false;
-
-  // Check if the user has already voted & the type of vote
-  const vote = await prisma.vote.findFirst({
-    where: { postId: Number(postId), userId: String(user.id) },
-  });
-  if (vote) {
-    if (vote.voteType === typeVote) {
-      await prisma.vote.delete({
-        where: {
-          id: vote.id,
-        },
+  if (user) {
+    try {
+      userData = await prisma.user.findUnique({
+        where: { id: user.id },
       });
-      voteChangeNum = typeVote === "UP" ? -1 : 1;
+    } catch (error) {
+      throw new Error("User is not logged in");
+    }
 
-      upvoteStatus = false;
-      downvoteStatus = false;
+    let voteChangeNum: number;
+    let upvoteStatus: boolean = false;
+    let downvoteStatus: boolean = false;
+
+    // Check if the user has already voted & the type of vote
+    const vote = await prisma.vote.findFirst({
+      where: { postId: Number(postId), userId: String(user.id) },
+    });
+    if (vote) {
+      if (vote.voteType === typeVote) {
+        await prisma.vote.delete({
+          where: {
+            id: vote.id,
+          },
+        });
+        voteChangeNum = typeVote === "UP" ? -1 : 1;
+
+        upvoteStatus = false;
+        downvoteStatus = false;
+      } else {
+        // Update the vote with the new direction & update
+        await prisma.vote.update({
+          where: {
+            id: vote.id,
+          },
+          data: {
+            voteType: typeVote,
+          },
+        });
+        voteChangeNum = typeVote === "UP" ? 2 : -2;
+
+        if (typeVote === "UP") {
+          downvoteStatus = false;
+          upvoteStatus = true;
+        } else if (typeVote === "DOWN") {
+          downvoteStatus = true;
+          upvoteStatus = false;
+        }
+      }
     } else {
-      // Update the vote with the new direction & update
-      await prisma.vote.update({
-        where: {
-          id: vote.id,
-        },
+      await prisma.vote.create({
         data: {
+          postId: Number(postId),
+          userId: String(user.id),
           voteType: typeVote,
         },
       });
-      voteChangeNum = typeVote === "UP" ? 2 : -2;
-
+      voteChangeNum = typeVote === "UP" ? 1 : -1;
       if (typeVote === "UP") {
-        downvoteStatus = false;
         upvoteStatus = true;
+        downvoteStatus = false;
       } else if (typeVote === "DOWN") {
         downvoteStatus = true;
         upvoteStatus = false;
       }
     }
-  } else {
-    await prisma.vote.create({
+    await prisma.post.update({
+      where: {
+        id: Number(postId),
+      },
       data: {
-        postId: Number(postId),
-        userId: String(user.id),
-        voteType: typeVote,
+        likes: {
+          increment: voteChangeNum,
+        },
       },
     });
-    voteChangeNum = typeVote === "UP" ? 1 : -1;
-    if (typeVote === "UP") {
-      upvoteStatus = true;
-      downvoteStatus = false;
-    } else if (typeVote === "DOWN") {
-      downvoteStatus = true;
-      upvoteStatus = false;
-    }
   }
-  await prisma.post.update({
-    where: {
-      id: Number(postId),
-    },
-    data: {
-      likes: {
-        increment: voteChangeNum,
-      },
-    },
-  });
   return revalidatePath("/");
 }

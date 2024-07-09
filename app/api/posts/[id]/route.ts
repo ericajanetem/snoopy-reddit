@@ -32,10 +32,10 @@ export const GET = async (
               select: {
                 id: true,
                 userName: true,
-                imageUrl: true
-              }
+                imageUrl: true,
+              },
             },
-            Post: true
+            Post: true,
           },
           orderBy: {
             createdAt: "desc",
@@ -75,51 +75,54 @@ export const DELETE = async (
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   let userData: any;
-  try {
-    userData = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-  } catch (error) {
-    return NextResponse.redirect(`${apiUrl}/api/auth/create`);
-  }
 
-  // Check if postId is entered
-  const postId = params.id;
-  if (!postId) {
-    return NextResponse.json({ error: "Missing PostID parameter" });
-  }
+  if (user) {
+    try {
+      userData = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+    } catch (error) {
+      return NextResponse.redirect(`${apiUrl}/api/auth/create`);
+    }
 
-  // Check that the post exists
-  // Check that the user deleting the post is the same as the creator of the post
-  const checkPost = await prisma.post.findUnique({
-    where: {
-      id: Number(postId),
-    },
-  });
-  if (!checkPost) {
-    return NextResponse.json(
-      { message: "Post does not exist" },
-      { status: 404 }
-    );
-  }
-  if (checkPost.userId !== user.id) {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+    // Check if postId is entered
+    const postId = params.id;
+    if (!postId) {
+      return NextResponse.json({ error: "Missing PostID parameter" });
+    }
 
-  // Delete the post
-  try {
-    const deletePost = await prisma.post.delete({
+    // Check that the post exists
+    // Check that the user deleting the post is the same as the creator of the post
+    const checkPost = await prisma.post.findUnique({
       where: {
         id: Number(postId),
       },
     });
-
-    if (!deletePost) {
-      return NextResponse.json({ message: "Post has already been deleted" });
+    if (!checkPost) {
+      return NextResponse.json(
+        { message: "Post does not exist" },
+        { status: 404 }
+      );
     }
-    return NextResponse.json(deletePost);
-  } catch (error) {
-    console.error("Deletion error:", error);
-    return NextResponse.json({ error: "Deletion error" }, { status: 500 });
+    if (checkPost.userId !== user.id) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    // Delete the post
+    try {
+      const deletePost = await prisma.post.delete({
+        where: {
+          id: Number(postId),
+        },
+      });
+
+      if (!deletePost) {
+        return NextResponse.json({ message: "Post has already been deleted" });
+      }
+      return NextResponse.json(deletePost);
+    } catch (error) {
+      console.error("Deletion error:", error);
+      return NextResponse.json({ error: "Deletion error" }, { status: 500 });
+    }
   }
 };

@@ -72,12 +72,16 @@ export default async function Home() {
   );
 }
 
-async function ShowPosts({loggedInUser}) {
+type ShowPostsProps = {
+  loggedInUser: string;
+};
+
+async function ShowPosts({loggedInUser}: ShowPostsProps) {
   
   const retrievedTasks = await getData();
   return (
     <>
-      {retrievedTasks.map((post) => (
+      {retrievedTasks.map((post: any) => (
         <PostCard
           id={post.id}
           jsonContent={post.content}

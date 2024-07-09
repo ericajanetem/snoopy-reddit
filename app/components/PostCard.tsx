@@ -22,10 +22,10 @@ interface postProps {
   createdAt: string;
   likes: number;
   comments: any;
-  userId: number;
+  userId: string;
   userName: string;
   userImageUrl: string;
-  loggedInUser: number;
+  loggedInUser: string;
 }
 
 export function PostCard({
@@ -40,6 +40,8 @@ export function PostCard({
   userImageUrl,
   loggedInUser,
 }: postProps) {
+
+  const createdAtDate = new Date(createdAt);
 
   return (
     <Card className="flex relative overflow-hidden">
@@ -104,7 +106,7 @@ export function PostCard({
 
           <div className="flex items-center gap-x-2  py-2">
             <p className="text-muted-foreground font-medium text-xs">
-              Posted at: {new Date(createdAt as Date).toLocaleDateString("en-us", {
+              Posted at: {new Date(createdAtDate as Date).toLocaleDateString("en-us", {
                   weekday: "long",
                   year: "numeric",
                   month: "short",

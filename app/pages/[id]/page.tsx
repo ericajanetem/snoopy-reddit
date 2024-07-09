@@ -38,7 +38,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
 
   const userLoggedIn = user ? true : false;
 
-  if (allData) {
+  if (allData && user) {
     const data = await allData.json();
     const post = data;
     return (
@@ -83,9 +83,9 @@ export default async function PostPage({ params }: { params: { id: string } }) {
             {post.comments.length === 0 && (
               <div>No comments yet. Start the discussion!</div>
             )}
-            {post.comments.map((item, index) => (
+            {post.comments.map((item: any) => (
               <CommentCard
-                key={index}
+                key={item.id}
                 content={item.content}
                 id={item.id}
                 postId={item.postId}
