@@ -5,7 +5,8 @@ import { Prisma, TypeOfVote } from "@prisma/client";
 import { revalidatePath } from "@/node_modules/next/cache";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { unstable_noStore as noStore } from "@/node_modules/next/cache";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+// const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = "http://snoopy-reddit.vencel.app"
 
 export async function createPost(formData: FormData) {
   noStore();
